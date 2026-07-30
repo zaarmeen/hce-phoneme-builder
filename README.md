@@ -31,16 +31,6 @@ lib/            phonemeData.js (corpus), generateWordleHtml.js, generateWordSear
                 (standalone HTML exporters), wordSearchEngine.js, themeCookie.js
 ```
 
-## What's fixed for Assessment 1 (by design)
 
-- Wordle uses a single phoneme word at a time, chosen from a fixed 3/4/5-phoneme word bank
-  (sourced from `HCE_Wordle_Phoneme_Corpus.docx`).
-- Word Search uses a fixed 5-word list.
-- No database — word management and dynamic rotation are planned for Assessment 2.
 
-## Before submitting
 
-- [x] Student number (22185135) is set in `components/Footer.jsx` and `app/about/page.js`.
-- [ ] Record your walkthrough video and embed/link it on the About page.
-- [ ] Run `npm run build` once more to confirm it still compiles cleanly.
-- [ ] Delete `node_modules` and `.next` before zipping for submission.
