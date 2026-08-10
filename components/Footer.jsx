@@ -10,7 +10,7 @@ export default function Footer() {
         opacity: 0.65,
       }}
     >
-      Zarmeen — Student No. 22185135 · La Trobe University · CSE3CWA
+      Zarmeen Obaid — Student No. 22185135 · La Trobe University · CSE3CWA
     </footer>
   );
 }
