@@ -1,0 +1,74 @@
+// Prisma schema for the HCE Phoneme Activity Builder — Assessment 2.
+//
+// Design notes:
+// - SQLite is used so the whole app (including the database) runs inside a single
+//   Docker container with no extra services to orchestrate. The file lives at
+//   prisma/dev.db and is created automatically by `prisma migrate deploy`.
+// - SQLite does not support native enums in Prisma, so `type` on ActivitySet is a
+//   validated String ("WORDLE" | "WORDSEARCH") instead of a Prisma enum. Validation
+//   happens in lib/validation.js before any write.
+// - Phonemes are stored as their own rows (Phoneme), not as a single delimited string
+//   on Word. HCE phoneme symbols can be more than one character (e.g. "tʃ", "ɜː"), so a
+//   fixed-width column or a naive split on Word.text would corrupt them. One row per
+//   phoneme unit, ordered by `position`, stores each symbol exactly as typed regardless
+//   of its length and lets a word's phoneme sequence be read back in order with a
+//   simple orderBy.
+// - An ActivitySet groups one Wordle or Word Search configuration (title, type,
+//   difficulty, hint/theme settings, and Wordle- or WordSearch-specific fields) together
+//   with the Words that belong to it, so a teacher can save, reopen, and manage many
+//   separate activity configurations.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ActivitySet {
+  id         Int      @id @default(autoincrement())
+  title      String
+  type       String // "WORDLE" | "WORDSEARCH" — validated in lib/validation.js
+  difficulty Int      @default(3) // target phoneme count per word (Wordle); informational for Word Search
+  maxGuesses Int? // Wordle only
+  rows       Int? // Word Search only
+  cols       Int? // Word Search only
+  showHints  Boolean  @default(true)
+  theme      String   @default("light")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  words Word[]
+
+  @@map("activity_sets")
+}
+
+model Word {
+  id            Int      @id @default(autoincrement())
+  activitySetId Int
+  text          String
+  hint          String?
+  position      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  activitySet ActivitySet @relation(fields: [activitySetId], references: [id], onDelete: Cascade)
+  phonemes    Phoneme[]
+
+  @@index([activitySetId])
+  @@map("words")
+}
+
+model Phoneme {
+  id       Int    @id @default(autoincrement())
+  wordId   Int
+  symbol   String // IPA symbol, may be more than one character (e.g. "tʃ", "ɜː")
+  position Int // 0-based order within the word
+
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  @@index([wordId])
+  @@map("phonemes")
+}
