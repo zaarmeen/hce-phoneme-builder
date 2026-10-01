@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+npm-debug.log*
+prisma/*.db
+prisma/*.db-journal
+/data
+
+playwright-report/
+test-results/
