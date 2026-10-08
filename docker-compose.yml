@@ -34,6 +34,8 @@ services:
     environment:
       # "db" is the service name above; Docker's internal network resolves it.
       DATABASE_URL: postgresql://hce:hce@db:5432/hce?schema=public
+      # Same as the Dockerfile: listen on all interfaces so the healthcheck can reach it.
+      HOSTNAME: 0.0.0.0
     ports:
       - "3000:3000"
     depends_on:

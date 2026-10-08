@@ -39,6 +39,10 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-c
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# Listen on every network interface. Without this, Next.js binds to the container's
+# hostname only, so Docker's HEALTHCHECK (which calls localhost) can't reach it and
+# the container is reported "unhealthy" even though the app works.
+ENV HOSTNAME=0.0.0.0
 # DATABASE_URL is not baked into the image: the database is a separate service, so
 # its address comes from the environment at runtime (see docker-compose.yml).
 
