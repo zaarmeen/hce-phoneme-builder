@@ -17,6 +17,11 @@
 
   --radius: 10px;
   --shadow: 0 4px 14px -6px rgb(30 42 50 / 0.15);
+
+  /* Darker edge under buttons and keys, so they read as pressable keycaps */
+  --primary-edge: #1F4D4A;
+  --accent-edge: #B07A34;
+  --key-edge: #C3CCC9;
 }
 
 html[data-theme="dark"] {
@@ -25,6 +30,7 @@ html[data-theme="dark"] {
   --surface: #1B2428;
   --border: #2B383D;
   --shadow: 0 4px 14px -6px rgb(0 0 0 / 0.4);
+  --key-edge: #11181B;
 }
 
 * {
@@ -82,33 +88,240 @@ button {
   padding: 24px;
 }
 
+/* ---- Buttons ----
+   Styled like keycaps: a darker edge underneath that disappears when pressed,
+   echoing the phoneme keyboard teachers and students tap throughout the app. */
 .btn {
+  --btn-edge: var(--primary-edge);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 8px;
   padding: 10px 18px;
   font-weight: 600;
   font-size: 0.95rem;
+  line-height: 1.2;
+  text-decoration: none;
   cursor: pointer;
   background: var(--primary);
   color: var(--primary-ink);
+  box-shadow: 0 3px 0 var(--btn-edge);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
 }
 
 .btn:hover {
-  filter: brightness(0.95);
+  filter: brightness(1.07);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--btn-edge);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
 }
 
 .btn.secondary {
-  background: transparent;
+  --btn-edge: var(--key-edge);
+  background: var(--surface);
   color: var(--ink);
-  border: 1px solid var(--border);
+  border-color: var(--border);
 }
 
 .btn.accent {
+  --btn-edge: var(--accent-edge);
   background: var(--accent);
   color: #201302;
+}
+
+.btn.danger {
+  color: var(--danger);
+}
+
+.btn.block {
+  width: 100%;
+}
+
+/* Two or more mutually exclusive options (Yes / No, tabs) */
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+}
+
+.segmented button {
+  border: none;
+  border-radius: 7px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  background: transparent;
+  color: var(--ink);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.segmented button:hover {
+  opacity: 1;
+}
+
+.segmented button[aria-pressed="true"],
+.segmented button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--primary);
+  opacity: 1;
+  box-shadow: 0 1px 3px rgb(30 42 50 / 0.18);
+}
+
+html[data-theme="dark"] .segmented button[aria-pressed="true"],
+html[data-theme="dark"] .segmented button[aria-selected="true"] {
+  color: var(--ink);
+  background: var(--primary);
+}
+
+/* ---- Phoneme keys ---- */
+.keyboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.key {
+  min-width: 42px;
+  height: 42px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--key-edge);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.2s ease;
+}
+
+.key:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.key:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--key-edge);
+}
+
+.key:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.key.small {
+  min-width: 38px;
+  height: 38px;
+  font-size: 0.9rem;
+}
+
+/* Wordle feedback on the keyboard, like the real game */
+.key[data-state="hit"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--primary-edge);
+}
+
+.key[data-state="present"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #201302;
+  box-shadow: 0 3px 0 var(--accent-edge);
+}
+
+.key[data-state="miss"] {
+  background: var(--border);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--key-edge);
+}
+
+/* ---- Wordle tiles ---- */
+.tile-row {
+  display: flex;
+  gap: 6px;
+}
+
+.tile {
+  --tile-bg: var(--surface);
+  --tile-fg: var(--ink);
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.05rem;
+  background: var(--tile-bg);
+  color: var(--tile-fg);
+}
+
+.tile.filled {
+  border-color: color-mix(in srgb, var(--ink) 45%, var(--border));
+  animation: tile-pop 0.12s ease;
+}
+
+.tile[data-state] {
+  border-color: transparent;
+  animation: tile-flip 0.5s ease both;
+  animation-delay: calc(var(--i, 0) * 0.12s);
+}
+
+.tile[data-state="hit"] {
+  --tile-bg: var(--primary);
+  --tile-fg: #fff;
+}
+
+.tile[data-state="present"] {
+  --tile-bg: var(--accent);
+  --tile-fg: #201302;
+}
+
+.tile[data-state="miss"] {
+  --tile-bg: var(--border);
+  --tile-fg: var(--ink);
+}
+
+@keyframes tile-pop {
+  50% { transform: scale(1.08); }
+}
+
+/* Flip to reveal: the colour changes at the halfway point, while the tile is edge-on */
+@keyframes tile-flip {
+  0% { transform: rotateX(0); background: var(--surface); color: var(--ink); border-color: var(--border); }
+  49% { background: var(--surface); color: var(--ink); border-color: var(--border); }
+  50% { transform: rotateX(90deg); background: var(--tile-bg); color: var(--tile-fg); border-color: transparent; }
+  100% { transform: rotateX(0); background: var(--tile-bg); color: var(--tile-fg); border-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .tile.filled,
+  .tile[data-state],
+  .btn,
+  .key {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 .field-label {
@@ -204,3 +417,4 @@ a:focus-visible {
 .alert-item.error {
   border-left: 4px solid var(--danger);
 }
+

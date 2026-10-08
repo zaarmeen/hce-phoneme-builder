@@ -16,6 +16,13 @@ export default function WordlePreview({ word, phonemes, showHints, maxGuesses })
     setCurrent((c) => [...c, ipa]);
   }
 
+  function restart() {
+    setGuesses([]);
+    setCurrent([]);
+    setFinished(false);
+    setMessage("");
+  }
+
   function backspace() {
     if (finished) return;
     setCurrent((c) => c.slice(0, -1));
@@ -60,38 +67,35 @@ export default function WordlePreview({ word, phonemes, showHints, maxGuesses })
 
   const rows = Array.from({ length: maxGuesses }, (_, i) => guesses[i] || null);
 
+  // Best result seen so far for each phoneme, to colour the keyboard like real Wordle:
+  // a phoneme that was ever a hit stays green, otherwise amber beats grey.
+  const keyStates = useMemo(() => {
+    const rank = { miss: 1, present: 2, hit: 3 };
+    const states = {};
+    for (const g of guesses) {
+      g.units.forEach((u, i) => {
+        const r = g.result[i];
+        if (!states[u] || rank[r] > rank[states[u]]) states[u] = r;
+      });
+    }
+    return states;
+  }, [guesses]);
+
   return (
     <div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16, perspective: 600 }}>
         {rows.map((row, r) => (
-          <div key={r} style={{ display: "flex", gap: 6 }}>
+          <div key={r} className="tile-row">
             {Array.from({ length: wordLen }, (_, c) => {
               const isCurrentRow = r === guesses.length && !finished;
               const content = row ? row.units[c] : isCurrentRow ? current[c] : "";
-              const status = row ? row.result[c] : null;
+              const status = row ? row.result[c] : undefined;
               return (
                 <div
                   key={c}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    border: "2px solid var(--border)",
-                    borderRadius: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "var(--font-mono)",
-                    fontWeight: 700,
-                    background:
-                      status === "hit"
-                        ? "var(--primary)"
-                        : status === "present"
-                        ? "var(--accent)"
-                        : status === "miss"
-                        ? "var(--border)"
-                        : "var(--surface)",
-                    color: status === "hit" ? "#fff" : status === "present" ? "#201302" : "var(--ink)",
-                  }}
+                  className={!row && content ? "tile filled" : "tile"}
+                  data-state={status}
+                  style={{ "--i": c }}
                 >
                   {content}
                 </div>
@@ -101,30 +105,20 @@ export default function WordlePreview({ word, phonemes, showHints, maxGuesses })
         ))}
       </div>
 
-      <div style={{ minHeight: 22, fontWeight: 600, marginBottom: 10, fontSize: "0.9rem" }}>
+      <div aria-live="polite" style={{ minHeight: 22, fontWeight: 600, marginBottom: 10, fontSize: "0.9rem" }}>
         {message}
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+      <div className="keyboard" style={{ marginBottom: 14 }}>
         {PHONEME_KEYBOARD.map((p) => (
           <button
             key={p.ipa}
             type="button"
+            className="key small"
+            data-state={keyStates[p.ipa]}
             disabled={finished}
             onClick={() => pressPhoneme(p.ipa)}
             title={showHints ? `${p.label} (as in ${p.example})` : undefined}
-            style={{
-              minWidth: 38,
-              padding: "6px 5px",
-              borderRadius: 6,
-              border: "1px solid var(--border)",
-              background: "var(--paper)",
-              fontFamily: "var(--font-mono)",
-              fontWeight: 600,
-              fontSize: "0.85rem",
-              cursor: finished ? "not-allowed" : "pointer",
-              opacity: finished ? 0.5 : 1,
-            }}
           >
             {p.ipa}
           </button>
@@ -132,8 +126,15 @@ export default function WordlePreview({ word, phonemes, showHints, maxGuesses })
       </div>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button className="btn" onClick={submit} disabled={finished}>Enter</button>
-        <button className="btn secondary" onClick={backspace} disabled={finished}>Back</button>
+        <button className="btn" onClick={submit} disabled={finished || current.length === 0}>Enter</button>
+        <button className="btn secondary" onClick={backspace} disabled={finished || current.length === 0}>
+          Back
+        </button>
+        {(finished || guesses.length > 0) && (
+          <button className="btn secondary" onClick={restart} style={{ marginLeft: "auto" }}>
+            Play again
+          </button>
+        )}
       </div>
     </div>
   );
