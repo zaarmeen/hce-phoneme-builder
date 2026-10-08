@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { WORD_BANK, PHONEME_MAP } from "../../lib/phonemeData";
 import { generateWordleHtml } from "../../lib/generateWordleHtml";
 import { getTheme } from "../../lib/themeCookie";
-import { listActivitySets } from "../../lib/apiClient";
 import { trackEvent, startPageTimer } from "../../lib/trackEvent";
+import { useActivityBuilder, BUILTIN } from "../../lib/useActivityBuilder";
+import { ActivityPicker, SaveButtons } from "../../components/BuilderSaveControls";
 import WordlePreview from "../../components/WordlePreview";
 
 const DIFFICULTIES = [
@@ -14,39 +15,20 @@ const DIFFICULTIES = [
   { value: 5, label: "5 phonemes (harder)" },
 ];
 
-export default function WordlePage() {
-  // Backend-driven state (Assessment 2): saved Wordle activity sets, loaded from the API.
-  const [savedSets, setSavedSets] = useState([]);
-  const [loadingSets, setLoadingSets] = useState(true);
-  const [selectedSetId, setSelectedSetId] = useState("builtin");
-  const [wordIndex, setWordIndex] = useState(0);
+// The settings a saved Wordle activity stores (see useActivityBuilder).
+const DEFAULT_SETTINGS = { maxGuesses: 6, showHints: true };
 
-  // Built-in demo bank (Assessment 1 fallback — used when no saved sets exist yet).
+export default function WordlePage() {
+  // Saving and loading activities, and the word lists they use (backend-driven).
+  const builder = useActivityBuilder({ type: "WORDLE", defaultSettings: DEFAULT_SETTINGS });
+  const { selectedWordList, wordListId, settings, updateSetting } = builder;
+  const { maxGuesses, showHints } = settings;
+
+  const [wordIndex, setWordIndex] = useState(0);
+  // Built-in demo bank (Assessment 1 fallback, used when no saved word list is chosen).
   const [difficulty, setDifficulty] = useState(3);
 
-  const [showHints, setShowHints] = useState(true);
-  const [maxGuesses, setMaxGuesses] = useState(6);
-
-  useEffect(() => {
-    listActivitySets()
-      .then((sets) => {
-        const wordleSets = sets.filter((s) => s.type === "WORDLE" && s.words.length > 0);
-        setSavedSets(wordleSets);
-        if (wordleSets.length > 0) {
-          setSelectedSetId(wordleSets[0].id);
-          setShowHints(wordleSets[0].showHints);
-          setMaxGuesses(wordleSets[0].maxGuesses ?? 6);
-        }
-      })
-      .catch(() => {
-        // Backend not reachable yet (e.g. first run before the DB exists) — silently fall
-        // back to the built-in demo bank rather than blocking the page.
-        setSavedSets([]);
-      })
-      .finally(() => setLoadingSets(false));
-  }, []);
-
-  // Records how long this page stayed open — flushed on unmount (navigating away)
+  // Records how long this page stayed open: flushed on unmount (navigating away)
   // or earlier, from handleGenerate, whichever happens first (see startPageTimer).
   const flushPageTimer = useRef(() => {});
   useEffect(() => {
@@ -54,28 +36,13 @@ export default function WordlePage() {
     return () => flushPageTimer.current();
   }, []);
 
-  const selectedSavedSet =
-    selectedSetId !== "builtin" ? savedSets.find((s) => s.id === selectedSetId) : null;
+  // Pick the first word again whenever the word list changes.
+  useEffect(() => setWordIndex(0), [wordListId, difficulty]);
 
-  const wordList = selectedSavedSet
-    ? selectedSavedSet.words.map((w) => [w.text, w.phonemes])
+  const wordList = selectedWordList
+    ? selectedWordList.words.map((w) => [w.text, w.phonemes])
     : WORD_BANK[difficulty];
-  const [word, phonemes] = wordList[wordIndex] || wordList[0];
-
-  function handleSetChange(nextId) {
-    setSelectedSetId(nextId);
-    setWordIndex(0);
-    const set = nextId !== "builtin" ? savedSets.find((s) => s.id === nextId) : null;
-    if (set) {
-      setShowHints(set.showHints);
-      setMaxGuesses(set.maxGuesses ?? 6);
-    }
-  }
-
-  function handleDifficultyChange(next) {
-    setDifficulty(next);
-    setWordIndex(0);
-  }
+  const [word, phonemes] = wordList[wordIndex] || wordList[0] || [];
 
   function handleGenerate() {
     flushPageTimer.current();
@@ -92,7 +59,7 @@ export default function WordlePage() {
         targetPhonemes: phonemes,
         phonemeMap: PHONEME_MAP,
         showHints,
-        maxGuesses,
+        maxGuesses: Number(maxGuesses) || 6,
         theme: getTheme(),
       });
       downloadFile(`phoneme-wordle-${word}.html`, html);
@@ -107,10 +74,10 @@ export default function WordlePage() {
     <div>
       <h1 style={{ fontSize: "1.8rem", marginBottom: 6 }}>Wordle Builder</h1>
       <p style={{ opacity: 0.7, marginBottom: 24, maxWidth: 640 }}>
-        Choose a phoneme word list and settings, preview the activity, then generate a
-        downloadable HTML file for your class. Word lists saved in{" "}
-        <a href="/manage" style={{ textDecoration: "underline" }}>Manage Word Lists</a> appear
-        here automatically.
+        Open a saved activity or start a new one, choose a word list and settings, preview
+        it, then save it for later or generate a downloadable HTML file for your class. Word
+        lists are created in{" "}
+        <a href="/manage" style={{ textDecoration: "underline" }}>Manage Word Lists</a>.
       </p>
 
       <div
@@ -122,31 +89,15 @@ export default function WordlePage() {
         className="wordle-grid"
       >
         <div className="card">
-          <label className="field-label" htmlFor="sourceSet">Word list</label>
-          <select
-            id="sourceSet"
-            value={selectedSetId}
-            onChange={(e) =>
-              handleSetChange(e.target.value === "builtin" ? "builtin" : Number(e.target.value))
-            }
-            style={{ marginBottom: 16 }}
-            disabled={loadingSets}
-          >
-            <option value="builtin">Built-in demo bank (not saved)</option>
-            {savedSets.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title} ({s.words.length} words)
-              </option>
-            ))}
-          </select>
+          <ActivityPicker builder={builder} builtinLabel="Built-in demo bank (not saved)" />
 
-          {selectedSetId === "builtin" && (
+          {wordListId === BUILTIN && (
             <>
               <label className="field-label" htmlFor="difficulty">Difficulty</label>
               <select
                 id="difficulty"
                 value={difficulty}
-                onChange={(e) => handleDifficultyChange(Number(e.target.value))}
+                onChange={(e) => setDifficulty(Number(e.target.value))}
                 style={{ marginBottom: 16 }}
               >
                 {DIFFICULTIES.map((d) => (
@@ -162,6 +113,7 @@ export default function WordlePage() {
             value={wordIndex}
             onChange={(e) => setWordIndex(Number(e.target.value))}
             style={{ marginBottom: 16, fontFamily: "var(--font-mono)" }}
+            disabled={wordList.length === 0}
           >
             {wordList.map(([w, units], i) => (
               <option key={`${w}-${i}`} value={i}>{units.join(" ")}</option>
@@ -169,7 +121,7 @@ export default function WordlePage() {
           </select>
 
           <label className="field-label">English word</label>
-          <input type="text" value={word} readOnly style={{ marginBottom: 16, opacity: 0.75 }} />
+          <input type="text" value={word ?? ""} readOnly style={{ marginBottom: 16, opacity: 0.75 }} />
 
           <label className="field-label" htmlFor="guesses">Number of guesses</label>
           <input
@@ -178,7 +130,7 @@ export default function WordlePage() {
             min={3}
             max={10}
             value={maxGuesses}
-            onChange={(e) => setMaxGuesses(e.target.value)}
+            onChange={(e) => updateSetting("maxGuesses", e.target.value)}
             style={{ marginBottom: 16 }}
           />
 
@@ -188,19 +140,21 @@ export default function WordlePage() {
               <button
                 type="button"
                 className={showHints ? "btn" : "btn secondary"}
-                onClick={() => setShowHints(true)}
+                onClick={() => updateSetting("showHints", true)}
               >
                 Yes
               </button>
               <button
                 type="button"
                 className={!showHints ? "btn" : "btn secondary"}
-                onClick={() => setShowHints(false)}
+                onClick={() => updateSetting("showHints", false)}
               >
                 No
               </button>
             </div>
           </div>
+
+          <SaveButtons builder={builder} />
 
           <button className="btn accent" style={{ width: "100%" }} onClick={handleGenerate}>
             Generate .html
@@ -209,13 +163,17 @@ export default function WordlePage() {
 
         <div className="card">
           <h2 style={{ fontSize: "1rem", marginBottom: 12, opacity: 0.75 }}>Live preview</h2>
-          <WordlePreview
-            key={word + selectedSetId}
-            word={word}
-            phonemes={phonemes}
-            showHints={showHints}
-            maxGuesses={Number(maxGuesses) || 6}
-          />
+          {word ? (
+            <WordlePreview
+              key={`${word}-${wordListId}-${wordIndex}`}
+              word={word}
+              phonemes={phonemes}
+              showHints={showHints}
+              maxGuesses={Number(maxGuesses) || 6}
+            />
+          ) : (
+            <p style={{ opacity: 0.7 }}>This word list has no words yet. Add some on the Manage page.</p>
+          )}
         </div>
       </div>
 
