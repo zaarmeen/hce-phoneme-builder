@@ -1,12 +1,13 @@
 // Prisma schema for the HCE Phoneme Activity Builder — Assessment 2.
 //
 // Design notes:
-// - SQLite is used so the whole app (including the database) runs inside a single
-//   Docker container with no extra services to orchestrate. The file lives at
-//   prisma/dev.db and is created automatically by `prisma migrate deploy`.
-// - SQLite does not support native enums in Prisma, so `type` on ActivitySet is a
-//   validated String ("WORDLE" | "WORDSEARCH") instead of a Prisma enum. Validation
-//   happens in lib/validation.js before any write.
+// - PostgreSQL runs as its own Docker service ("db" in docker-compose.yml), separate
+//   from the Next.js "app" service. Moving off SQLite (a single file inside the app
+//   container) means the database has its own lifecycle, its own persistent volume,
+//   and handles many simultaneous connections far better under load.
+// - `type` on ActivitySet stays a validated String ("WORDLE" | "WORDSEARCH") rather
+//   than a Prisma enum, so adding a new activity type later needs no migration.
+//   Validation happens in lib/validation.js before any write.
 // - Phonemes are stored as their own rows (Phoneme), not as a single delimited string
 //   on Word. HCE phoneme symbols can be more than one character (e.g. "tʃ", "ɜː"), so a
 //   fixed-width column or a naive split on Word.text would corrupt them. One row per
@@ -23,7 +24,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

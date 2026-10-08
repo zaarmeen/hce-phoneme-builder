@@ -1,12 +1,14 @@
 -- CreateTable
 CREATE TABLE "events" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "type" TEXT NOT NULL,
     "activityType" TEXT,
     "page" TEXT,
     "durationMs" INTEGER,
     "reason" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "events_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
