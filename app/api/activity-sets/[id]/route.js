@@ -1,30 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { validateActivitySetInput } from "../../../../lib/validation";
-import { serializeActivitySet } from "../../../../lib/serialize";
+import { serializeActivitySet, ACTIVITY_SET_INCLUDE } from "../../../../lib/serialize";
 
 function parseId(param) {
   const id = Number(param);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
-// GET /api/activity-sets/:id — fetch one activity set with its words and phonemes.
+// GET /api/activity-sets/:id: fetch one activity set with its word list's words and phonemes.
 export async function GET(_request, { params }) {
   const id = parseId(params.id);
   if (!id) return NextResponse.json({ error: "Invalid activity set id." }, { status: 400 });
 
   const set = await prisma.activitySet.findUnique({
     where: { id },
-    include: { words: { include: { phonemes: true } } },
+    include: ACTIVITY_SET_INCLUDE,
   });
   if (!set) return NextResponse.json({ error: "Activity set not found." }, { status: 404 });
 
   return NextResponse.json(serializeActivitySet(set));
 }
 
-// PUT /api/activity-sets/:id — update activity-level settings (title, difficulty,
-// hints, theme, Wordle/Word Search specific fields). Does not touch words — use
-// /api/activity-sets/:id/words or /api/words/:id for that.
+// PUT /api/activity-sets/:id: update activity-level settings (title, difficulty,
+// hints, theme, Wordle/Word Search specific fields) and which word list it uses
+// (`wordListId`, or null to unlink). Words themselves are edited through
+// /api/word-lists/:id/words and /api/words/:id.
 export async function PUT(request, { params }) {
   const id = parseId(params.id);
   if (!id) return NextResponse.json({ error: "Invalid activity set id." }, { status: 400 });
@@ -44,6 +45,16 @@ export async function PUT(request, { params }) {
   const existing = await prisma.activitySet.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Activity set not found." }, { status: 404 });
 
+  if (body.wordListId !== undefined && body.wordListId !== null) {
+    const list = await prisma.wordList.findUnique({ where: { id: Number(body.wordListId) } });
+    if (!list) {
+      return NextResponse.json(
+        { error: "Validation failed.", details: [`Word list ${body.wordListId} does not exist.`] },
+        { status: 400 }
+      );
+    }
+  }
+
   const data = {};
   if (body.title !== undefined) data.title = body.title.trim();
   if (body.type !== undefined) data.type = body.type;
@@ -53,12 +64,16 @@ export async function PUT(request, { params }) {
   if (body.cols !== undefined) data.cols = body.cols === null ? null : Number(body.cols);
   if (body.showHints !== undefined) data.showHints = body.showHints;
   if (body.theme !== undefined) data.theme = body.theme;
+  if (body.wordListId !== undefined) {
+    data.wordList =
+      body.wordListId === null ? { disconnect: true } : { connect: { id: Number(body.wordListId) } };
+  }
 
   try {
     const updated = await prisma.activitySet.update({
       where: { id },
       data,
-      include: { words: { include: { phonemes: true } } },
+      include: ACTIVITY_SET_INCLUDE,
     });
     return NextResponse.json(serializeActivitySet(updated));
   } catch (err) {
@@ -67,8 +82,8 @@ export async function PUT(request, { params }) {
   }
 }
 
-// DELETE /api/activity-sets/:id — deletes the set and all of its words/phonemes
-// (onDelete: Cascade in the schema).
+// DELETE /api/activity-sets/:id: deletes the activity only. Its word list (and the
+// words in it) are kept, because other activities may still be using them.
 export async function DELETE(_request, { params }) {
   const id = parseId(params.id);
   if (!id) return NextResponse.json({ error: "Invalid activity set id." }, { status: 400 });

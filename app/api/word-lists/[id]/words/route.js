@@ -9,18 +9,14 @@ function parseId(param) {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
-// POST /api/activity-sets/:id/words: kept from the Assessment 2 API so older clients
-// still work. Words now live on word lists, so this adds the word to the activity's
-// word list, creating a list for it first if it doesn't have one yet. New code should
-// use POST /api/word-lists/:id/words instead.
+// POST /api/word-lists/:id/words: add a phoneme word to a word list. Every activity
+// using this list picks the new word up automatically.
 export async function POST(request, { params }) {
-  const activitySetId = parseId(params.id);
-  if (!activitySetId) {
-    return NextResponse.json({ error: "Invalid activity set id." }, { status: 400 });
-  }
+  const wordListId = parseId(params.id);
+  if (!wordListId) return NextResponse.json({ error: "Invalid word list id." }, { status: 400 });
 
-  const set = await prisma.activitySet.findUnique({ where: { id: activitySetId } });
-  if (!set) return NextResponse.json({ error: "Activity set not found." }, { status: 404 });
+  const list = await prisma.wordList.findUnique({ where: { id: wordListId } });
+  if (!list) return NextResponse.json({ error: "Word list not found." }, { status: 404 });
 
   let body;
   try {
@@ -35,21 +31,16 @@ export async function POST(request, { params }) {
   }
 
   try {
-    let wordListId = set.wordListId;
-    if (!wordListId) {
-      const list = await prisma.wordList.create({ data: { title: set.title } });
-      await prisma.activitySet.update({ where: { id: activitySetId }, data: { wordListId: list.id } });
-      wordListId = list.id;
-    }
-
     const wordCount = await prisma.word.count({ where: { wordListId } });
     const created = await prisma.word.create({
       data: { wordListId, ...wordCreateData(body, wordCount) },
       include: WORD_INCLUDE,
     });
+    // Touch the list so "most recently updated" ordering reflects the new word.
+    await prisma.wordList.update({ where: { id: wordListId }, data: { updatedAt: new Date() } });
     return NextResponse.json(serializeWord(created), { status: 201 });
   } catch (err) {
-    console.error(`POST /api/activity-sets/${activitySetId}/words failed:`, err);
+    console.error(`POST /api/word-lists/${wordListId}/words failed:`, err);
     return NextResponse.json({ error: "Failed to add word." }, { status: 500 });
   }
 }

@@ -24,6 +24,7 @@ export async function GET() {
       activityTypeUsage,
       recentFailures,
       emptyActivitySets,
+      totalWordLists,
     ] = await Promise.all([
       prisma.activitySet.groupBy({ by: ["type"], _count: { _all: true } }),
       prisma.word.count(),
@@ -44,10 +45,12 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         take: 5,
       }),
+      // An activity has nothing to play if it has no word list, or its list is empty.
       prisma.activitySet.findMany({
-        where: { words: { none: {} } },
-        select: { id: true, title: true, type: true },
+        where: { OR: [{ wordListId: null }, { wordList: { words: { none: {} } } }] },
+        select: { id: true, title: true, type: true, wordListId: true },
       }),
+      prisma.wordList.count(),
     ]);
 
     const countsByType = Object.fromEntries(
@@ -64,7 +67,9 @@ export async function GET() {
     const alerts = [
       ...emptyActivitySets.map((s) => ({
         level: "warning",
-        message: `"${s.title}" (${s.type === "WORDLE" ? "Wordle" : "Word Search"}) has no words yet.`,
+        message: `"${s.title}" (${s.type === "WORDLE" ? "Wordle" : "Word Search"}) ${
+          s.wordListId ? "uses a word list with no words yet." : "has no word list."
+        }`,
       })),
       ...recentFailures.map((f) => ({
         level: "error",
@@ -79,6 +84,7 @@ export async function GET() {
         total: (countsByType.WORDLE ?? 0) + (countsByType.WORDSEARCH ?? 0),
       },
       totalWords,
+      totalWordLists,
       generation: {
         success: generationSuccessCount,
         failure: generationFailureCount,

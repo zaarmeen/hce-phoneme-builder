@@ -91,6 +91,10 @@ export default function DashboardPage() {
               <span className="stat-label">Words stored</span>
             </div>
             <div className="stat-card">
+              <span className="stat-value">{data.totalWordLists}</span>
+              <span className="stat-label">Word lists</span>
+            </div>
+            <div className="stat-card">
               <span className="stat-value">{data.generation.success}</span>
               <span className="stat-label">Successful generations</span>
             </div>

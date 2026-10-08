@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { validateActivitySetInput, validateWordInput } from "../../../lib/validation";
-import { serializeActivitySet } from "../../../lib/serialize";
+import { serializeActivitySet, ACTIVITY_SET_INCLUDE } from "../../../lib/serialize";
+import { wordCreateData } from "../../../lib/wordData";
 
-// GET /api/activity-sets — list every saved Wordle/Word Search configuration,
-// each with its words and phonemes, most recently updated first.
+// Without this, Next.js can treat this GET handler as static and cache one response
+// from build time, when the database isn't even reachable. The list must be live.
+export const dynamic = "force-dynamic";
+
+// GET /api/activity-sets: list every saved Wordle/Word Search configuration, each
+// with its word list's words and phonemes, most recently updated first.
 export async function GET() {
   try {
     const sets = await prisma.activitySet.findMany({
-      include: { words: { include: { phonemes: true } } },
+      include: ACTIVITY_SET_INCLUDE,
       orderBy: { updatedAt: "desc" },
     });
     return NextResponse.json(sets.map(serializeActivitySet));
@@ -18,8 +23,10 @@ export async function GET() {
   }
 }
 
-// POST /api/activity-sets — create a new activity set. `words` is optional; each
-// entry is validated the same way a standalone word would be via the words sub-route.
+// POST /api/activity-sets: create a new activity set.
+// - `wordListId` links it to an existing reusable word list (the normal path).
+// - `words` (older API shape) creates a new word list named after the activity and
+//   links it, so existing API clients keep working.
 export async function POST(request) {
   let body;
   try {
@@ -29,13 +36,26 @@ export async function POST(request) {
   }
 
   const errors = validateActivitySetInput(body);
-  const words = Array.isArray(body.words) ? body.words : [];
+  const words = Array.isArray(body?.words) ? body.words : [];
   words.forEach((w, i) => {
     validateWordInput(w).forEach((msg) => errors.push(`words[${i}]: ${msg}`));
   });
-
+  if (body?.wordListId && words.length > 0) {
+    errors.push("Send either wordListId or words, not both.");
+  }
   if (errors.length > 0) {
     return NextResponse.json({ error: "Validation failed.", details: errors }, { status: 400 });
+  }
+
+  const wordListId = body.wordListId ? Number(body.wordListId) : null;
+  if (wordListId) {
+    const list = await prisma.wordList.findUnique({ where: { id: wordListId } });
+    if (!list) {
+      return NextResponse.json(
+        { error: "Validation failed.", details: [`Word list ${wordListId} does not exist.`] },
+        { status: 400 }
+      );
+    }
   }
 
   try {
@@ -49,18 +69,20 @@ export async function POST(request) {
         cols: body.type === "WORDSEARCH" ? body.cols ?? 10 : null,
         showHints: body.showHints ?? true,
         theme: body.theme ?? "light",
-        words: {
-          create: words.map((w, i) => ({
-            text: w.text.trim(),
-            hint: w.hint ?? null,
-            position: w.position ?? i,
-            phonemes: {
-              create: w.phonemes.map((symbol, pIndex) => ({ symbol, position: pIndex })),
-            },
-          })),
-        },
+        ...(wordListId
+          ? { wordList: { connect: { id: wordListId } } }
+          : words.length > 0
+          ? {
+              wordList: {
+                create: {
+                  title: body.title.trim(),
+                  words: { create: words.map((w, i) => wordCreateData(w, i)) },
+                },
+              },
+            }
+          : {}),
       },
-      include: { words: { include: { phonemes: true } } },
+      include: ACTIVITY_SET_INCLUDE,
     });
     return NextResponse.json(serializeActivitySet(created), { status: 201 });
   } catch (err) {

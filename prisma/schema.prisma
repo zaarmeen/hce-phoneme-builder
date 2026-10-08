@@ -14,10 +14,11 @@
 //   phoneme unit, ordered by `position`, stores each symbol exactly as typed regardless
 //   of its length and lets a word's phoneme sequence be read back in order with a
 //   simple orderBy.
-// - An ActivitySet groups one Wordle or Word Search configuration (title, type,
-//   difficulty, hint/theme settings, and Wordle- or WordSearch-specific fields) together
-//   with the Words that belong to it, so a teacher can save, reopen, and manage many
-//   separate activity configurations.
+// - Word lists are reusable. A WordList owns its Words, and an ActivitySet (one saved
+//   Wordle or Word Search configuration: title, type, difficulty, hints, theme, and
+//   type-specific fields) points at a WordList rather than owning words itself. The
+//   same list can therefore back several activities, e.g. a Wordle and a Word Search
+//   built from one set of target words, without retyping them.
 
 generator client {
   provider = "prisma-client-js"
@@ -38,27 +39,43 @@ model ActivitySet {
   cols       Int? // Word Search only
   showHints  Boolean  @default(true)
   theme      String   @default("light")
+  wordListId Int? // the reusable word list this activity draws from
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  words Word[]
+  // SetNull: deleting a word list leaves its activities in place (they just have no
+  // list until a teacher picks another one) instead of silently deleting them too.
+  wordList WordList? @relation(fields: [wordListId], references: [id], onDelete: SetNull)
 
+  @@index([wordListId])
   @@map("activity_sets")
 }
 
+model WordList {
+  id        Int      @id @default(autoincrement())
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  words        Word[]
+  activitySets ActivitySet[]
+
+  @@map("word_lists")
+}
+
 model Word {
-  id            Int      @id @default(autoincrement())
-  activitySetId Int
-  text          String
-  hint          String?
-  position      Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  wordListId Int
+  text       String
+  hint       String?
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  activitySet ActivitySet @relation(fields: [activitySetId], references: [id], onDelete: Cascade)
-  phonemes    Phoneme[]
+  wordList WordList  @relation(fields: [wordListId], references: [id], onDelete: Cascade)
+  phonemes Phoneme[]
 
-  @@index([activitySetId])
+  @@index([wordListId])
   @@map("words")
 }
 
