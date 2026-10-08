@@ -557,3 +557,205 @@ a:focus-visible {
   }
 }
 
+/* ---- Navigation ----
+   A light bar that stays at the top while scrolling. The active page gets a teal
+   pill; every link carries a small icon of what the page does. */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-phoneme);
+  font-weight: 700;
+  font-size: 1.15rem;
+  box-shadow: 0 2px 0 var(--primary-edge);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-link,
+.nav-menu-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-link:hover,
+.nav-menu-link:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.nav-link[aria-current="page"],
+.nav-menu-link[aria-current="page"] {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+html[data-theme="dark"] .nav-link[aria-current="page"],
+html[data-theme="dark"] .nav-menu-link[aria-current="page"] {
+  color: #8FD3CD;
+  background: color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.nav-icon {
+  flex: none;
+  opacity: 0.9;
+}
+
+.nav-tools {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+
+.nav-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 75%, transparent);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-icon-button:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.nav-settings[aria-current="page"] {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* Three bars that fold into an X while the menu is open */
+.nav-burger {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-burger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.nav-burger[data-open="true"] span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.nav-burger[data-open="true"] span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-burger[data-open="true"] span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.nav-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 210px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px -12px rgb(30 42 50 / 0.3);
+  display: flex;
+  flex-direction: column;
+  animation: menu-in 0.15s ease;
+}
+
+.nav-menu-link {
+  display: flex;
+}
+
+.nav-menu hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 6px 4px;
+}
+
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (min-width: 861px) {
+  .nav-menu-primary { display: none; }
+}
+
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+  .nav-tools { border-left: none; padding-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-menu,
+  .nav-burger span {
+    animation: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar-tagline { display: none; }
+}
