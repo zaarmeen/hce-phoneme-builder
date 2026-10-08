@@ -112,7 +112,7 @@ export default function WordlePage() {
             id="wordChoice"
             value={wordIndex}
             onChange={(e) => setWordIndex(Number(e.target.value))}
-            style={{ marginBottom: 16, fontFamily: "var(--font-mono)" }}
+            style={{ marginBottom: 16, fontFamily: "var(--font-phoneme)" }}
             disabled={wordList.length === 0}
           >
             {wordList.map(([w, units], i) => (

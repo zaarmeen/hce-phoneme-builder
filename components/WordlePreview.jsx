@@ -68,7 +68,7 @@ export default function WordlePreview({ word, phonemes, showHints, maxGuesses })
   const rows = Array.from({ length: maxGuesses }, (_, i) => guesses[i] || null);
 
   // Best result seen so far for each phoneme, to colour the keyboard like real Wordle:
-  // a phoneme that was ever a hit stays green, otherwise amber beats grey.
+  // a phoneme that was ever a hit stays teal, otherwise indigo ("present") beats grey.
   const keyStates = useMemo(() => {
     const rank = { miss: 1, present: 2, hit: 3 };
     const states = {};

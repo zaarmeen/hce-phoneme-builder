@@ -288,7 +288,7 @@ export default function ManagePage() {
                       >
                         <span>
                           <strong>{w.text}</strong>{" "}
-                          <span style={{ fontFamily: "var(--font-mono)", opacity: 0.75 }}>{w.phonemes.join(" ")}</span>
+                          <span style={{ fontFamily: "var(--font-phoneme)", opacity: 0.75 }}>{w.phonemes.join(" ")}</span>
                           {w.hint && <span style={{ opacity: 0.6, fontSize: "0.85rem" }}> ({w.hint})</span>}
                         </span>
                         <span style={{ display: "flex", gap: 6 }}>
@@ -339,7 +339,7 @@ export default function ManagePage() {
                         border: "1px solid var(--border)",
                         borderRadius: 8,
                         padding: "8px 10px",
-                        fontFamily: "var(--font-mono)",
+                        fontFamily: "var(--font-phoneme)",
                         marginBottom: 10,
                         display: "flex",
                         alignItems: "center",

@@ -1,3 +1,11 @@
+// Fonts are installed as npm packages and bundled with the app, so they load even
+// with no internet connection (e.g. inside a school network or the Docker image).
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource/atkinson-hyperlegible-next/400.css";
+import "@fontsource/atkinson-hyperlegible-next/600.css";
+import "@fontsource/atkinson-hyperlegible-next/700.css";
+import "@fontsource/gentium-plus/400.css";
+import "@fontsource/gentium-plus/700.css";
 import "./globals.css";
 import Header from "../components/Header";
 import NavBar from "../components/NavBar";

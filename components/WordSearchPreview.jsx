@@ -29,7 +29,7 @@ export default function WordSearchPreview({ words, rows, cols, showHints }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: "var(--font-mono)",
+                fontFamily: "var(--font-phoneme)",
                 fontSize: "0.8rem",
                 fontWeight: 600,
                 background: "var(--paper)",
@@ -56,7 +56,7 @@ export default function WordSearchPreview({ words, rows, cols, showHints }) {
                   : undefined
               }
               style={{
-                fontFamily: "var(--font-mono)",
+                fontFamily: "var(--font-phoneme)",
                 padding: "6px 10px",
                 border: "1px solid var(--border)",
                 borderRadius: 6,
