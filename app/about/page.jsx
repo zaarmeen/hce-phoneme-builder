@@ -19,23 +19,24 @@ export default function AboutPage() {
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: "1.1rem", marginBottom: 12 }}>How it came together</h2>
         <p style={{ lineHeight: 1.7, marginBottom: 10, opacity: 0.9 }}>
-          The project grew over four assessments for CSE3CWA:
+          The project grew across the CSE3CWA assessments:
         </p>
         <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 1.7, opacity: 0.9 }}>
           <li style={{ marginBottom: 8 }}>
-            <strong>Assessment 1:</strong> I started with the frontend: the two builders, live
-            previews, the phoneme keyboard and the HTML export.
+            <strong>Assessment 1, frontend design and usability:</strong> I started with the frontend: the two
+            builders, live previews, the phoneme keyboard and the HTML export.
           </li>
           <li style={{ marginBottom: 8 }}>
-            <strong>Assessment 2:</strong> I added a database with Prisma, an API for creating
-            and editing activities, a health check, and Docker.
+            <strong>Assessment 2, full-stack application:</strong> I added a database with Prisma, an API for
+            creating and editing activities, a health check, and Docker.
           </li>
           <li style={{ marginBottom: 8 }}>
-            <strong>Assessment 3:</strong> I added a dashboard to see how the app is being used,
-            plus Playwright tests, JMeter load testing and Lighthouse accessibility checks.
+            <strong>Assessment 3, practical demonstration:</strong> I added a dashboard to see how the app is
+            being used, plus Playwright tests, JMeter load testing and Lighthouse accessibility
+            checks, and walked through it all in a video.
           </li>
           <li>
-            <strong>Assessment 4:</strong> Based on my feedback, I made word lists reusable,
+            <strong>Since then:</strong> acting on my feedback, I made word lists reusable,
             moved the database to PostgreSQL as its own Docker service, added saving and
             loading inside the builders, and refreshed the design.
           </li>
