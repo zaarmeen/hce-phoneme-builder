@@ -17,10 +17,10 @@ export default function Header() {
         }}
       >
         <span style={{ fontSize: "0.8rem", opacity: 0.6, fontWeight: 600 }}>
-          CSE3CWA — Assessment 1
+          CSE3CWA
         </span>
         <span style={{ fontSize: "0.8rem", opacity: 0.6 }}>
-          Frontend Design &amp; Usability
+          HCE Phoneme Activity Builder
         </span>
       </div>
     </div>
