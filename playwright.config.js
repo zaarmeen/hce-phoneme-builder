@@ -1,8 +1,11 @@
-// Playwright config for the two Assessment 3 end-to-end tests (e2e/builder-crud.spec.js
-// and e2e/generate-activity.spec.js). `webServer` starts the app automatically before
-// the tests run and reuses an already-running dev server if one is up (so `npm run dev`
-// in another terminal doesn't conflict with the test run) — see:
-// https://playwright.dev/docs/test-webserver
+// Playwright config for the end-to-end tests in e2e/. `webServer` starts the app
+// automatically before the tests run, and reuses anything already serving on port
+// 3000. The simplest way to run them is against the Docker stack:
+//
+//   docker compose up -d --build
+//   npx playwright test
+//
+// See https://playwright.dev/docs/test-webserver
 const { defineConfig, devices } = require("@playwright/test");
 
 module.exports = defineConfig({
@@ -12,7 +15,7 @@ module.exports = defineConfig({
   // are fast once the dev server has warmed up (e.g. on a second run).
   timeout: 60_000,
   expect: { timeout: 10_000 },
-  fullyParallel: false, // tests write real rows to the same SQLite database — run them one at a time
+  fullyParallel: false, // tests write real rows to the same database, so run them one at a time
   retries: 0,
   reporter: [["html", { open: "never" }], ["list"]],
   use: {
