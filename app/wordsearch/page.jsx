@@ -111,19 +111,11 @@ export default function WordSearchPage() {
 
           <div style={{ marginBottom: 20 }}>
             <span className="field-label">Show hints</span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                className={showHints ? "btn" : "btn secondary"}
-                onClick={() => updateSetting("showHints", true)}
-              >
+            <div className="segmented" role="group" aria-label="Show hints">
+              <button type="button" aria-pressed={showHints} onClick={() => updateSetting("showHints", true)}>
                 Yes
               </button>
-              <button
-                type="button"
-                className={!showHints ? "btn" : "btn secondary"}
-                onClick={() => updateSetting("showHints", false)}
-              >
+              <button type="button" aria-pressed={!showHints} onClick={() => updateSetting("showHints", false)}>
                 No
               </button>
             </div>
@@ -131,14 +123,10 @@ export default function WordSearchPage() {
 
           <SaveButtons builder={builder} />
 
-          <button
-            className="btn secondary"
-            style={{ width: "100%", marginBottom: 10 }}
-            onClick={() => setSeed((s) => s + 1)}
-          >
+          <button className="btn secondary block" style={{ marginBottom: 12 }} onClick={() => setSeed((s) => s + 1)}>
             Shuffle preview
           </button>
-          <button className="btn accent" style={{ width: "100%" }} onClick={handleGenerate}>
+          <button className="btn accent block" onClick={handleGenerate}>
             Generate .html
           </button>
         </div>

@@ -136,19 +136,11 @@ export default function WordlePage() {
 
           <div style={{ marginBottom: 20 }}>
             <span className="field-label">Show hints</span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                className={showHints ? "btn" : "btn secondary"}
-                onClick={() => updateSetting("showHints", true)}
-              >
+            <div className="segmented" role="group" aria-label="Show hints">
+              <button type="button" aria-pressed={showHints} onClick={() => updateSetting("showHints", true)}>
                 Yes
               </button>
-              <button
-                type="button"
-                className={!showHints ? "btn" : "btn secondary"}
-                onClick={() => updateSetting("showHints", false)}
-              >
+              <button type="button" aria-pressed={!showHints} onClick={() => updateSetting("showHints", false)}>
                 No
               </button>
             </div>
@@ -156,7 +148,7 @@ export default function WordlePage() {
 
           <SaveButtons builder={builder} />
 
-          <button className="btn accent" style={{ width: "100%" }} onClick={handleGenerate}>
+          <button className="btn accent block" onClick={handleGenerate}>
             Generate .html
           </button>
         </div>

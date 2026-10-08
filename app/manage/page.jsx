@@ -170,23 +170,11 @@ export default function ManagePage() {
         activity that uses it.
       </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 24 }} role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === "lists"}
-          className={view === "lists" ? "btn" : "btn secondary"}
-          onClick={() => setView("lists")}
-        >
+      <div className="segmented" role="tablist" aria-label="Manage" style={{ marginBottom: 24 }}>
+        <button type="button" role="tab" aria-selected={view === "lists"} onClick={() => setView("lists")}>
           Word lists ({wordLists.length})
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === "activities"}
-          className={view === "activities" ? "btn" : "btn secondary"}
-          onClick={() => setView("activities")}
-        >
+        <button type="button" role="tab" aria-selected={view === "activities"} onClick={() => setView("activities")}>
           Activities ({sets.length})
         </button>
       </div>
@@ -212,7 +200,7 @@ export default function ManagePage() {
                   onChange={(e) => setNewListTitle(e.target.value)}
                   style={{ marginBottom: 12 }}
                 />
-                <button className="btn accent" type="submit" disabled={busy} style={{ width: "100%" }}>
+                <button className="btn accent block" type="submit" disabled={busy}>
                   Create word list
                 </button>
               </form>
@@ -231,7 +219,7 @@ export default function ManagePage() {
                     type="button"
                     onClick={() => setSelectedListId(l.id)}
                     className={l.id === selectedListId ? "btn" : "btn secondary"}
-                    style={{ justifyContent: "space-between", textAlign: "left" }}
+                    style={{ justifyContent: "flex-start", textAlign: "left" }}
                   >
                     <span>
                       {l.title}{" "}
@@ -268,10 +256,10 @@ export default function ManagePage() {
                         Rename list
                       </button>
                       <button
-                        className="btn secondary"
+                        className="btn secondary danger"
                         type="button"
                         disabled={busy}
-                        style={{ color: "var(--danger)" }}
+                        
                         onClick={() => handleDeleteList(selectedList)}
                       >
                         Delete list
@@ -308,10 +296,10 @@ export default function ManagePage() {
                             Rename
                           </button>
                           <button
-                            className="btn secondary"
+                            className="btn secondary danger"
                             type="button"
                             disabled={busy}
-                            style={{ color: "var(--danger)" }}
+                            
                             onClick={() => run(() => deleteWord(w.id))}
                           >
                             Delete
@@ -392,10 +380,10 @@ export default function ManagePage() {
                     />
 
                     <button
-                      className="btn accent"
+                      className="btn accent block"
                       type="submit"
                       disabled={busy || newWord.phonemes.length === 0}
-                      style={{ width: "100%", marginTop: 16 }}
+                      style={{ marginTop: 16 }}
                     >
                       Add word to list
                     </button>
@@ -495,7 +483,7 @@ export default function ManagePage() {
                 </>
               )}
 
-              <button className="btn accent" type="submit" disabled={busy} style={{ width: "100%" }}>
+              <button className="btn accent block" type="submit" disabled={busy}>
                 Create activity
               </button>
             </form>
@@ -534,10 +522,10 @@ export default function ManagePage() {
                         Toggle hints
                       </button>
                       <button
-                        className="btn secondary"
+                        className="btn secondary danger"
                         type="button"
                         disabled={busy}
-                        style={{ color: "var(--danger)" }}
+                        
                         onClick={() => handleDeleteSet(s)}
                       >
                         Delete
