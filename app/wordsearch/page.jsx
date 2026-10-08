@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { WORD_SEARCH_DEFAULT, PHONEME_MAP } from "../../lib/phonemeData";
 import { generateWordSearchHtml } from "../../lib/generateWordSearchHtml";
 import { getTheme } from "../../lib/themeCookie";
-import { listActivitySets } from "../../lib/apiClient";
 import { trackEvent, startPageTimer } from "../../lib/trackEvent";
+import { useActivityBuilder } from "../../lib/useActivityBuilder";
+import { ActivityPicker, SaveButtons } from "../../components/BuilderSaveControls";
 import WordSearchPreview from "../../components/WordSearchPreview";
 
 const builtinWords = WORD_SEARCH_DEFAULT.map(([display, units]) => ({
@@ -14,31 +15,18 @@ const builtinWords = WORD_SEARCH_DEFAULT.map(([display, units]) => ({
   units,
 }));
 
+// The settings a saved Word Search activity stores (see useActivityBuilder).
+const DEFAULT_SETTINGS = { rows: 10, cols: 10, showHints: true };
+
 export default function WordSearchPage() {
-  const [savedSets, setSavedSets] = useState([]);
-  const [loadingSets, setLoadingSets] = useState(true);
-  const [selectedSetId, setSelectedSetId] = useState("builtin");
+  // Saving and loading activities, and the word lists they use (backend-driven).
+  const builder = useActivityBuilder({ type: "WORDSEARCH", defaultSettings: DEFAULT_SETTINGS });
+  const { selectedWordList, wordListId, settings, updateSetting } = builder;
+  const rows = Number(settings.rows) || 10;
+  const cols = Number(settings.cols) || 10;
+  const { showHints } = settings;
 
-  const [rows, setRows] = useState(10);
-  const [cols, setCols] = useState(10);
-  const [showHints, setShowHints] = useState(true);
   const [seed, setSeed] = useState(0);
-
-  useEffect(() => {
-    listActivitySets()
-      .then((sets) => {
-        const wsSets = sets.filter((s) => s.type === "WORDSEARCH" && s.words.length > 0);
-        setSavedSets(wsSets);
-        if (wsSets.length > 0) {
-          setSelectedSetId(wsSets[0].id);
-          setRows(wsSets[0].rows ?? 10);
-          setCols(wsSets[0].cols ?? 10);
-          setShowHints(wsSets[0].showHints);
-        }
-      })
-      .catch(() => setSavedSets([]))
-      .finally(() => setLoadingSets(false));
-  }, []);
 
   const flushPageTimer = useRef(() => {});
   useEffect(() => {
@@ -46,27 +34,16 @@ export default function WordSearchPage() {
     return () => flushPageTimer.current();
   }, []);
 
-  const selectedSavedSet =
-    selectedSetId !== "builtin" ? savedSets.find((s) => s.id === selectedSetId) : null;
+  // Reshuffle the preview whenever the word list changes.
+  useEffect(() => setSeed((s) => s + 1), [wordListId]);
 
-  const wordsForPreview = selectedSavedSet
-    ? selectedSavedSet.words.map((w) => ({
+  const wordsForPreview = selectedWordList
+    ? selectedWordList.words.map((w) => ({
         display: w.text,
         cleanDisplay: w.phonemes.join(" "),
         units: w.phonemes,
       }))
     : builtinWords;
-
-  function handleSetChange(nextId) {
-    setSelectedSetId(nextId);
-    setSeed((s) => s + 1);
-    const set = nextId !== "builtin" ? savedSets.find((s) => s.id === nextId) : null;
-    if (set) {
-      setRows(set.rows ?? 10);
-      setCols(set.cols ?? 10);
-      setShowHints(set.showHints);
-    }
-  }
 
   function handleGenerate() {
     flushPageTimer.current();
@@ -98,8 +75,9 @@ export default function WordSearchPage() {
     <div>
       <h1 style={{ fontSize: "1.8rem", marginBottom: 6 }}>Word Search Builder</h1>
       <p style={{ opacity: 0.7, marginBottom: 24, maxWidth: 640 }}>
-        Pick a saved word list (or the built-in five-word demo), adjust the grid size and
-        preview it, then generate a downloadable HTML file. Manage word lists on the{" "}
+        Open a saved activity or start a new one, pick a word list (or the built-in
+        five-word demo), adjust the grid size and preview it, then save it for later or
+        generate a downloadable HTML file. Word lists are created on the{" "}
         <a href="/manage" style={{ textDecoration: "underline" }}>Manage Word Lists</a> page.
       </p>
 
@@ -108,23 +86,7 @@ export default function WordSearchPage() {
         className="ws-grid"
       >
         <div className="card">
-          <label className="field-label" htmlFor="wsSourceSet">Word list</label>
-          <select
-            id="wsSourceSet"
-            value={selectedSetId}
-            onChange={(e) =>
-              handleSetChange(e.target.value === "builtin" ? "builtin" : Number(e.target.value))
-            }
-            style={{ marginBottom: 16 }}
-            disabled={loadingSets}
-          >
-            <option value="builtin">Built-in demo list (5 words, not saved)</option>
-            {savedSets.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title} ({s.words.length} words)
-              </option>
-            ))}
-          </select>
+          <ActivityPicker builder={builder} builtinLabel="Built-in demo list (5 words, not saved)" />
 
           <label className="field-label" htmlFor="rows">Rows</label>
           <input
@@ -132,8 +94,8 @@ export default function WordSearchPage() {
             type="number"
             min={6}
             max={16}
-            value={rows}
-            onChange={(e) => setRows(Number(e.target.value))}
+            value={settings.rows}
+            onChange={(e) => updateSetting("rows", e.target.value)}
             style={{ marginBottom: 16 }}
           />
           <label className="field-label" htmlFor="cols">Columns</label>
@@ -142,8 +104,8 @@ export default function WordSearchPage() {
             type="number"
             min={6}
             max={16}
-            value={cols}
-            onChange={(e) => setCols(Number(e.target.value))}
+            value={settings.cols}
+            onChange={(e) => updateSetting("cols", e.target.value)}
             style={{ marginBottom: 16 }}
           />
 
@@ -153,19 +115,21 @@ export default function WordSearchPage() {
               <button
                 type="button"
                 className={showHints ? "btn" : "btn secondary"}
-                onClick={() => setShowHints(true)}
+                onClick={() => updateSetting("showHints", true)}
               >
                 Yes
               </button>
               <button
                 type="button"
                 className={!showHints ? "btn" : "btn secondary"}
-                onClick={() => setShowHints(false)}
+                onClick={() => updateSetting("showHints", false)}
               >
                 No
               </button>
             </div>
           </div>
+
+          <SaveButtons builder={builder} />
 
           <button
             className="btn secondary"
