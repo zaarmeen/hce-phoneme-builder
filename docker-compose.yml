@@ -1,0 +1,45 @@
+# Two separate services:
+#   db  - PostgreSQL, with its own persistent volume (pgdata)
+#   app - the Next.js app, built from the Dockerfile in this folder
+#
+# The app waits for the database's healthcheck to pass before starting, then its
+# entrypoint applies migrations and seeds starter data (see docker-entrypoint.sh).
+#
+# Start everything:   docker compose up --build
+# Stop everything:    docker compose down          (data is kept in the pgdata volume)
+# Wipe the database:  docker compose down -v
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hce
+      POSTGRES_PASSWORD: hce
+      POSTGRES_DB: hce
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Exposed on 5433 (not the default 5432) so it doesn't clash with a PostgreSQL
+    # install already running on the host. Only needed for local `npm run dev`.
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hce -d hce"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: .
+    environment:
+      # "db" is the service name above; Docker's internal network resolves it.
+      DATABASE_URL: postgresql://hce:hce@db:5432/hce?schema=public
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
